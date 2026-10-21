@@ -103,42 +103,173 @@ label.checkbox:focus-within {
   display: flex;
   flex-direction: column;
 }
+/* ヘッダー・フッターは参加者ページ（cb-member.fsif.jp）のコンテンツ共通レイアウトに合わせる */
 .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: 1px solid var(--line);
+  background: rgba(0, 0, 51, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.site-header-inner {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 12px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--line);
-  background: var(--navy);
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  gap: 8px;
+}
+.header-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: none;
-  border: 0;
-  padding: 0;
-  text-align: left;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
 }
-/* 正式ロゴデータ（タグラインなし・横組み・Navy）。形・余白は元データのまま */
 .brand-logo {
-  height: 36px;
+  height: 40px;
   width: auto;
   display: block;
 }
-.brand-name {
-  font-weight: 700;
-  font-size: 0.95rem;
-}
 .brand-sub {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: var(--muted);
   border-left: 1px solid var(--line);
-  padding-left: 10px;
+  padding-left: 12px;
+}
+.icon-button,
+.ghost-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  color: var(--muted);
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+.icon-button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+}
+.ghost-button {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.icon-button:hover,
+.ghost-button:hover {
+  background: var(--surface-2);
+  color: var(--white);
+}
+.ghost-button:focus-visible,
+.brand:focus-visible,
+.menu-item:focus-visible {
+  outline: 3px solid var(--sky);
+  outline-offset: 2px;
+}
+/* メニューは画面の右側だけに開く（スマホでは全幅） */
+.header-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 320px;
+  background: rgba(0, 0, 51, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  border-bottom-left-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  padding: 12px;
+  animation: menu-in 0.2s ease-out;
+}
+.header-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 12px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+  line-height: 1.4;
+  transition: background 0.2s;
+}
+.menu-item:hover {
+  background: var(--surface-2);
+}
+.menu-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--sky);
+  transition: transform 0.2s;
+}
+.menu-item:hover .menu-icon {
+  transform: scale(1.1);
+}
+.menu-icon img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+.menu-icon img.icon-sm {
+  width: 16px;
+  height: 16px;
+}
+.menu-title {
+  display: block;
+  font-weight: 700;
+  transition: color 0.2s;
+}
+.menu-item:hover .menu-title {
+  color: var(--sky);
+}
+.menu-sub {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.menu-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 4px 0;
+}
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
 }
 .main {
   flex: 1;
@@ -149,13 +280,34 @@ label.checkbox:focus-within {
 }
 .site-footer {
   border-top: 1px solid var(--line);
-  padding: 16px;
-  font-size: 0.78rem;
-  color: var(--muted);
+  background: rgba(0, 0, 51, 0.8);
+  padding: 32px 0;
+}
+.site-footer-inner {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
   text-align: center;
 }
-.site-footer p {
-  margin: 0 0 4px;
+.footer-note {
+  margin: 0;
+  max-width: 720px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.footer-logo {
+  height: 32px;
+  width: auto;
+  opacity: 0.7;
+}
+.copyright {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--muted);
 }
 
 /* ───── 共通部品 ───── */
@@ -1011,8 +1163,18 @@ textarea::placeholder {
     grid-template-columns: 1fr;
     gap: 0;
   }
-  .brand-sub {
+}
+@media (max-width: 639px) {
+  .brand-sub,
+  .ghost-label {
     display: none;
+  }
+  .ghost-button {
+    padding: 0 8px;
+  }
+  .header-menu {
+    width: 100%;
+    border-left: 0;
   }
 }
 

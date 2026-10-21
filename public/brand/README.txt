@@ -1,6 +1,7 @@
-このフォルダに Cosmo Base の正式ロゴデータを置いてください（ブランドガイドライン 01 LOGO）。
+ヘッダー・フッター用の画像（参加者ページ cb-member.fsif.jp と同じデータ）。
 
-  CosmoBase_logo_horizontal_navy.png   … ヘッダー用（タグラインなし・横組み・Navy、4:1）
+  cosmo-base-logo.png   … ヘッダー・フッターのロゴ（member_only/public/images/cosmo-base-logo.png）
+  cb-icon.png / x.png / instagram.png / note.png / youtube.png
+                        … メニュー内のアイコン（member_only/public の同名画像を 96px に縮小）
 
-提供データをトリミング・変形・色変更せずにそのまま置きます。
-ファイルがない場合、ヘッダーには本文書体でサイト名「Cosmo Base」を表示します（ロゴの打ち直しはしません）。
+ロゴは提供データをトリミング・変形・色変更せずにそのまま置きます。
