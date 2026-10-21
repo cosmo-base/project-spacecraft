@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ConsentScreen } from './components/ConsentScreen';
 import { DataSettings } from './components/DataSettings';
+import { SiteHeader } from './components/SiteHeader';
 import { GameScreen } from './components/GameScreen';
 import { ReportScreen } from './components/ReportScreen';
 import { TitleScreen } from './components/TitleScreen';
@@ -10,9 +11,6 @@ import type { GameState, Mode } from './engine/types';
 import { clearGame, loadGame, loadPrefs, saveGame, savePrefs, type Prefs } from './storage';
 
 type Screen = 'title' | 'game' | 'report' | 'data';
-
-/** 正式ロゴデータ（タグラインなし・横組み）。public/brand/ に提供データをそのまま置く */
-const HEADER_LOGO = './brand/CosmoBase_logo_horizontal_navy.png';
 
 export default function App() {
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
@@ -70,15 +68,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <header className="site-header">
-        <button className="brand" onClick={() => setScreen('title')} aria-label="タイトルに戻る">
-          <BrandLogo />
-          <span className="brand-sub">宇宙機プロジェクトシミュレーター</span>
-        </button>
-        <button className="link-button" onClick={openData}>
-          保存とデータの設定
-        </button>
-      </header>
+      <SiteHeader onTitle={() => setScreen('title')} onOpenData={openData} />
 
       <main className="main">
         {!consented && screen !== 'data' ? (
@@ -111,18 +101,14 @@ export default function App() {
       </main>
 
       <footer className="site-footer">
-        <p>
-          アカウント不要・クラウドセーブなし。ゲームの進行や文章の表示にAIは使っていません（すべて事前に用意した内容です）。数値モデルはゲームとしての簡略化を含み、実機設計の精度を保証するものではありません。
-        </p>
-        <p>（運営：FSIF）</p>
+        <div className="site-footer-inner">
+          <p className="footer-note">
+            アカウント不要・クラウドセーブなし。ゲームの進行や文章の表示にAIは使っていません（すべて事前に用意した内容です）。数値モデルはゲームとしての簡略化を含み、実機設計の精度を保証するものではありません。（運営：FSIF）
+          </p>
+          <img className="footer-logo" src="./brand/cosmo-base-logo.png" alt="Cosmo Base" />
+          <p className="copyright">&copy; 2026 Cosmo Base. All rights reserved.</p>
+        </div>
       </footer>
     </div>
   );
-}
-
-/** 正式ロゴがあればそのまま表示し、なければサイト名を本文書体で表示する（ロゴの打ち直しはしない） */
-function BrandLogo() {
-  const [failed, setFailed] = useState(false);
-  if (failed) return <span className="brand-name">Cosmo Base</span>;
-  return <img className="brand-logo" src={HEADER_LOGO} alt="Cosmo Base" onError={() => setFailed(true)} />;
 }
