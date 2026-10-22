@@ -8,11 +8,12 @@ interface Props {
   game: GameState;
   event: GameEvent;
   onConfirm: (d: Design) => void;
+  onTermOpen?: (term: string) => void;
 }
 
 const LEVEL_TEXT = { ok: '余裕あり', tight: 'ギリギリ', short: '足りない' } as const;
 
-export function DesignView({ game, event, onConfirm }: Props) {
+export function DesignView({ game, event, onConfirm, onTermOpen }: Props) {
   const [design, setDesign] = useState<Design>(DEFAULT_DESIGN);
   const expert = game.mode === 'expert';
   const b = computeBudgets(design);
@@ -145,7 +146,12 @@ export function DesignView({ game, event, onConfirm }: Props) {
         </button>
       </div>
 
-      {event.terms && <Glossary terms={[...event.terms, ...SUBSYSTEMS.map((s) => s.term!).filter((t) => !event.terms!.includes(t))]} />}
+      {event.terms && (
+        <Glossary
+          terms={[...event.terms, ...SUBSYSTEMS.map((s) => s.term!).filter((t) => !event.terms!.includes(t))]}
+          onOpen={onTermOpen}
+        />
+      )}
     </article>
   );
 }

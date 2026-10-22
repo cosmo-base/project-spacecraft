@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "export-labels": "vite-node scripts/export-labels.ts --"
   },
   "dependencies": {
     "@fontsource/noto-sans-jp": "^5.1.0",

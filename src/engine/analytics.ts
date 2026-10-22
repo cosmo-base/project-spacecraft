@@ -8,18 +8,23 @@ import { getValue, STAT_KEYS, TECH_KEYS } from './values';
  * 人を特定する情報は含めない。セーブデータとは別物で、ここからゲームの続きを遊ぶことはできない。
  *
  * - type 'play'：エンディング到達時に自動で1回送る
+ * - type 'progress'：プレイ途中にページを閉じた・別のタブに切り替えたときに、その時点の到達地点を送る（離脱の分析用）
  * - type 'feedback'：ご意見欄の送信ボタンを押したときに、ご意見と playId だけを送る
- * playId はプレイごとに作る使い捨ての乱数で、同じプレイの結果とご意見を結び付けるためだけに使う。
+ * playId はプレイごとに作る使い捨ての乱数で、同じプレイの記録どうしを結び付けるためだけに使う。
  */
 export interface PlayLogItem {
   event: string;
   choice: string;
   deltas: Effect;
   check?: { risk: RiskId; p: number; success: boolean };
+  /** 選ぶまでにかかった時間（ミリ秒） */
+  ms?: number;
 }
 
+export const SCHEMA = 4;
+
 export interface PlayPayload {
-  schema: 3;
+  schema: typeof SCHEMA;
   type: 'play';
   playId: string;
   /** 再現には同じバージョンのイベントデータが必要 */
@@ -35,26 +40,46 @@ export interface PlayPayload {
   choiceIds: string[];
   log: PlayLogItem[];
   report: MissionReport & { text: string };
+  /** 選ぶまでにかかった時間の合計（秒）。結果画面を読む時間は含まない */
+  durationSec: number;
+  /** 用語ボタンを開いた回数（用語ごと） */
+  termOpens: Record<string, number>;
+}
+
+/** プレイ途中の到達地点（離脱の分析用） */
+export interface ProgressPayload {
+  schema: typeof SCHEMA;
+  type: 'progress';
+  playId: string;
+  appVersion: string;
+  mode: Mode;
+  phaseReached: number;
+  eventCount: number;
+  durationSec: number;
+  /** 最後に表示されていたイベント */
+  lastEvent: string;
 }
 
 export interface FeedbackPayload {
-  schema: 3;
+  schema: typeof SCHEMA;
   type: 'feedback';
   playId: string;
   appVersion: string;
   feedback: string;
 }
 
-export type AnalyticsPayload = PlayPayload | FeedbackPayload;
+export type AnalyticsPayload = PlayPayload | ProgressPayload | FeedbackPayload;
 
 /** イベントや数値を変えたら上げる。再現するときは同じバージョンのコードを使う */
-export const APP_VERSION = '0.3.0';
+export const APP_VERSION = '0.4.0';
+
+const durationSecOf = (s: GameState) => Math.round(s.log.reduce((sum, l) => sum + (l.ms ?? 0), 0) / 1000);
 
 export function buildPlayPayload(s: GameState, playId: string): PlayPayload {
   const band = Math.floor(s.stats.progress / 20) * 20;
   const report = buildReport(s);
   return {
-    schema: 3,
+    schema: SCHEMA,
     type: 'play',
     playId,
     appVersion: APP_VERSION,
@@ -67,13 +92,35 @@ export function buildPlayPayload(s: GameState, playId: string): PlayPayload {
     finalValues: Object.fromEntries([...STAT_KEYS, ...TECH_KEYS].map((k) => [k, getValue(s, k)])) as Record<ValueKey, number>,
     flags: [...s.flags],
     choiceIds: s.log.map((l) => `${l.eventId}:${l.choiceId}`),
-    log: s.log.map((l) => ({ event: l.eventId, choice: l.choiceId, deltas: l.deltas, ...(l.check ? { check: l.check } : {}) })),
+    log: s.log.map((l) => ({
+      event: l.eventId,
+      choice: l.choiceId,
+      deltas: l.deltas,
+      ...(l.check ? { check: l.check } : {}),
+      ...(l.ms != null ? { ms: l.ms } : {}),
+    })),
     report: { ...report, text: reportToText(s, report) },
+    durationSec: durationSecOf(s),
+    termOpens: { ...(s.termOpens ?? {}) },
+  };
+}
+
+export function buildProgressPayload(s: GameState, playId: string): ProgressPayload {
+  return {
+    schema: SCHEMA,
+    type: 'progress',
+    playId,
+    appVersion: APP_VERSION,
+    mode: s.mode,
+    phaseReached: s.phaseIndex,
+    eventCount: s.log.length,
+    durationSec: durationSecOf(s),
+    lastEvent: s.currentEventId ?? s.lastResult?.eventId ?? '',
   };
 }
 
 export function buildFeedbackPayload(playId: string, feedback: string): FeedbackPayload {
-  return { schema: 3, type: 'feedback', playId, appVersion: APP_VERSION, feedback };
+  return { schema: SCHEMA, type: 'feedback', playId, appVersion: APP_VERSION, feedback };
 }
 
 export function newPlayId(): string {
@@ -113,7 +160,26 @@ export async function sendAnalytics(payload: AnalyticsPayload, consent: boolean)
   }
 }
 
+/**
+ * ページを閉じる・別のタブに切り替える瞬間でも届くように送る（応答は待たない）。
+ * navigator.sendBeacon は Cookie を必ず付けて送るため使わず、keepalive 付きの fetch で認証情報なしに送る。
+ */
+export function sendAnalyticsOnLeave(payload: AnalyticsPayload, consent: boolean) {
+  if (!consent || !ANALYTICS_ENDPOINT) return;
+  try {
+    void fetch(ANALYTICS_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+      credentials: 'omit',
+      keepalive: true,
+    }).catch(() => undefined);
+  } catch {
+    /* 送れなくてもゲームには影響しない */
+  }
+}
+
 export const FEEDBACK_MAX = 1000;
 
 /** 同意画面の説明内容の版。説明を変更したら上げる（全員に同意を取り直す） */
-export const CONSENT_VERSION = 3;
+export const CONSENT_VERSION = 4;

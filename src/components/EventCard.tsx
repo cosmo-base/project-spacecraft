@@ -11,9 +11,10 @@ interface Props {
   game: GameState;
   event: GameEvent;
   onChoose: (choiceId: string) => void;
+  onTermOpen?: (term: string) => void;
 }
 
-export function EventCard({ game, event, onChoose }: Props) {
+export function EventCard({ game, event, onChoose, onTermOpen }: Props) {
   const choices = availableChoices(game, event);
   const expert = game.mode === 'expert';
 
@@ -66,7 +67,7 @@ export function EventCard({ game, event, onChoose }: Props) {
       </ul>
       {choices.length > 1 && <p className="small muted">キーボードの数字キーでも選べます。</p>}
 
-      {event.terms && event.terms.length > 0 && <Glossary terms={event.terms} />}
+      {event.terms && event.terms.length > 0 && <Glossary terms={event.terms} onOpen={onTermOpen} />}
     </article>
   );
 }

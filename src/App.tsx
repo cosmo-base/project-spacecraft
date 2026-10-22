@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ConsentScreen } from './components/ConsentScreen';
 import { DataSettings } from './components/DataSettings';
 import { SiteHeader } from './components/SiteHeader';
 import { GameScreen } from './components/GameScreen';
 import { ReportScreen } from './components/ReportScreen';
 import { TitleScreen } from './components/TitleScreen';
-import { CONSENT_VERSION } from './engine/analytics';
+import { buildProgressPayload, CONSENT_VERSION, newPlayId, sendAnalyticsOnLeave } from './engine/analytics';
 import { newGame } from './engine/engine';
 import type { GameState, Mode } from './engine/types';
 import { clearGame, loadGame, loadPrefs, saveGame, savePrefs, type Prefs } from './storage';
@@ -40,10 +40,41 @@ export default function App() {
     window.scrollTo(0, 0);
   }, [screen, consented]);
 
+  // プレイ途中でページを閉じた・別のタブに切り替えたときは、その時点の到達地点を送る（離脱の分析用）。
+  // 同じ地点を何度も送らないよう、最後に送った地点を覚えておく
+  const gameRef = useRef(game);
+  gameRef.current = game;
+  const consentRef = useRef(consented);
+  consentRef.current = consented;
+  const lastLeaveSent = useRef('');
+  const reportLeave = (g: GameState | null) => {
+    if (!g || g.ending || !g.playId) return;
+    const key = `${g.playId}:${g.log.length}:${g.currentEventId}`;
+    if (key === lastLeaveSent.current) return;
+    lastLeaveSent.current = key;
+    sendAnalyticsOnLeave(buildProgressPayload(g, g.playId), consentRef.current);
+  };
+  useEffect(() => {
+    // タブの切り替え・アプリの切り替え（スマートフォン）で隠れたとき
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') reportLeave(gameRef.current);
+    };
+    // ページを閉じる・別のページへ移るとき
+    const onPageHide = () => reportLeave(gameRef.current);
+    document.addEventListener('visibilitychange', onHide);
+    window.addEventListener('pagehide', onPageHide);
+    return () => {
+      document.removeEventListener('visibilitychange', onHide);
+      window.removeEventListener('pagehide', onPageHide);
+    };
+  }, []);
+
   const start = (mode: Mode) => {
+    // 遊んでいる途中で新しく始めた場合も、それまでのプレイは途中でやめたものとして記録する
+    reportLeave(game);
     clearGame();
     setSaved(null);
-    setGame(newGame(mode));
+    setGame({ ...newGame(mode), playId: newPlayId(), termOpens: {} });
     setScreen('game');
   };
 
@@ -80,7 +111,8 @@ export default function App() {
                 onStart={start}
                 saved={saved}
                 onContinue={() => {
-                  setGame(saved);
+                  // 古いセーブデータには playId がないので、続きから遊ぶときに付ける
+                  setGame(saved && { ...saved, playId: saved.playId ?? newPlayId(), termOpens: saved.termOpens ?? {} });
                   setScreen('game');
                 }}
                 onOpenData={openData}

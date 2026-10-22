@@ -107,6 +107,8 @@ export interface GameEvent {
   trigger?: RiskId;
   /** 追加イベントの挿入位置。指定したイベントの直前に並べる（発生順を決める） */
   before?: string;
+  /** クイズの正解の選択肢ID（分析で正答率を出すため。ゲームの進行には使わない） */
+  answer?: string;
   choices: Choice[];
 }
 
@@ -130,6 +132,8 @@ export interface LogEntry {
   deltas: Effect;
   check?: { risk: RiskId; p: number; success: boolean };
   tags: string[];
+  /** イベントが表示されてから選ぶまでの時間（ミリ秒）。画面側で記録し、ゲームの進行には使わない */
+  ms?: number;
 }
 
 export interface GameState {
@@ -137,6 +141,10 @@ export interface GameState {
   mode: Mode;
   /** 開始時の乱数シード。プレイの展開を再現するために使う（古いセーブデータにはない） */
   seed?: number;
+  /** プレイごとの使い捨てID。途中経過とエンディングの記録を結び付けるために、画面側で開始時に付ける */
+  playId?: string;
+  /** 用語ボタンを開いた回数（用語ごと）。画面側で記録する */
+  termOpens?: Record<string, number>;
   rng: number;
   phaseIndex: number;
   currentEventId: string | null;

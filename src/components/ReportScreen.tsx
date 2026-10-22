@@ -13,6 +13,7 @@ const playIds = new WeakMap<GameState, string>();
 const sentPlays = new WeakSet<GameState>();
 
 function playIdFor(game: GameState) {
+  if (game.playId) return game.playId;
   let id = playIds.get(game);
   if (!id) {
     id = newPlayId();

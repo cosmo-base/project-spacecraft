@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EVENTS } from '../data/events';
 import { GLOSSARY } from '../data/glossary';
-import { buildFeedbackPayload, buildPlayPayload, type PlayPayload } from './analytics';
+import { buildFeedbackPayload, buildPlayPayload, buildProgressPayload, type PlayPayload } from './analytics';
 import { replayPlay } from './replay';
 import { computeBudgets, DEFAULT_DESIGN, SUBSYSTEMS } from './design';
 import { availableChoices, choose, confirmDesign, getEvent, newGame, proceed } from './engine';
@@ -54,6 +54,12 @@ describe('event data', () => {
       expect(new Set(cids).size, e.id).toBe(cids.length);
       if (e.kind !== 'design') expect(cids.length, e.id).toBeGreaterThan(0);
     }
+  });
+
+  it('gives every quiz a valid answer', () => {
+    const quizzes = EVENTS.filter((e) => e.tags.includes('クイズ'));
+    expect(quizzes.length).toBeGreaterThan(0);
+    for (const q of quizzes) expect(q.choices.map((c) => c.id), q.id).toContain(q.answer);
   });
 
   it('defines every glossary term it references', () => {
@@ -198,6 +204,20 @@ describe('analytics payload', () => {
     expect(JSON.stringify(p.log).length).toBeLessThan(45000);
     expect(JSON.stringify(p.report).length).toBeLessThan(45000);
     expect(p.choiceIds.every((c) => /^[\w-]+:[\w-]+$/.test(c))).toBe(true);
+  });
+
+  it('includes decision time, term opens and an in-progress snapshot', () => {
+    let s: GameState = newGame('beginner', 5);
+    s = { ...s, playId: 'p', termOpens: { バス: 2 } };
+    s = choose(s, availableChoices(s, getEvent(s.currentEventId!))[0].id);
+    s.log[s.log.length - 1].ms = 4200;
+    s = proceed(s);
+    const play = buildPlayPayload(s, 'p');
+    expect(play.durationSec).toBe(4);
+    expect(play.termOpens).toEqual({ バス: 2 });
+    expect(play.log[0].ms).toBe(4200);
+    const prog = buildProgressPayload(s, 'p');
+    expect(prog).toMatchObject({ type: 'progress', playId: 'p', phaseReached: 0, eventCount: 1, durationSec: 4, lastEvent: s.currentEventId });
   });
 
   it('sends only the feedback and playId with feedback', () => {

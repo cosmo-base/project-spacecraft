@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { GLOSSARY } from '../data/glossary';
 
-export function Glossary({ terms }: { terms: string[] }) {
+interface Props {
+  terms: string[];
+  /** 用語の説明を開いたとき（分析用に回数を数える） */
+  onOpen?: (term: string) => void;
+}
+
+export function Glossary({ terms, onOpen }: Props) {
   const [open, setOpen] = useState<string | null>(null);
   return (
     <div className="glossary">
@@ -11,7 +17,11 @@ export function Glossary({ terms }: { terms: string[] }) {
           key={t}
           className={`term ${open === t ? 'active' : ''}`}
           aria-expanded={open === t}
-          onClick={() => setOpen(open === t ? null : t)}
+          onClick={() => {
+            const next = open === t ? null : t;
+            setOpen(next);
+            if (next) onOpen?.(next);
+          }}
         >
           {t}
         </button>
